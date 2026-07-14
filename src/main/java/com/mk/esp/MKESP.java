@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MKESP implements ClientModInitializer {
     public static ConcurrentHashMap<Integer, Vec3d> positions = new ConcurrentHashMap<>();
+
     @Override
     public void onInitializeClient() {
         WorldRenderEvents.LAST.register(ctx -> {
@@ -25,13 +26,17 @@ public class MKESP implements ClientModInitializer {
             Tessellator t = Tessellator.getInstance();
             BufferBuilder b = t.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            
             for (Entity e : c.world.getEntities()) {
                 if (e == c.player || !e.isAlive()) continue;
                 Vec3d pos = positions.getOrDefault(e.getId(), e.getPos()).subtract(ctx.camera().getPos());
-                b.vertex(pos.x, pos.y, pos.z).color(1,0,0,1);
-                b.vertex(pos.x, pos.y + 2, pos.z).color(1,0,0,1);
+                
+                b.vertex(pos.x, pos.y, pos.z).color(1, 0, 0, 1);
+                b.vertex(pos.x, pos.y + 2, pos.z).color(1, 0, 0, 1);
             }
-            try { BufferRenderer.drawWithGlobalProgram(b.end()); } catch (Exception ignored) {}
+            try { 
+                BufferRenderer.drawWithGlobalProgram(b.end()); 
+            } catch (Exception ignored) {}
             RenderSystem.enableDepthTest();
         });
     }
@@ -40,7 +45,14 @@ public class MKESP implements ClientModInitializer {
 @Mixin(net.minecraft.client.network.ClientPlayNetworkHandler.class)
 class MKNetworkMixin {
     @Inject(method = "onEntityPosition", at = @At("HEAD"))
-    void onPos(EntityPositionS2CPacket p, CallbackInfo ci) { MKESP.positions.put(p.id(), new Vec3d(p.x(), p.y(), p.z())); }
+    void onPos(EntityPositionS2CPacket p, CallbackInfo ci) {
+        MKESP.positions.put(p.getEntityId(), new Vec3d(p.getX(), p.getY(), p.getZ()));
+    }
+    
     @Inject(method = "onEntitiesDestroy", at = @At("HEAD"))
-    void onDest(EntitiesDestroyS2CPacket p, CallbackInfo ci) { for(int i : p.entityIds()) MKESP.positions.remove(i); }
+    void onDest(EntitiesDestroyS2CPacket p, CallbackInfo ci) {
+        for(int i : p.getEntityIds()) {
+            MKESP.positions.remove(i);
+        }
+    }
 }
