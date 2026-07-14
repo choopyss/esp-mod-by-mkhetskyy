@@ -22,20 +22,21 @@ public class MKESP implements ClientModInitializer {
             MinecraftClient c = MinecraftClient.getInstance();
             if (c.world == null) return;
             RenderSystem.disableDepthTest();
+            // Используем стандартный шейдер вместо недоступного getPositionColorProgram
+            RenderSystem.setShader(GameRenderer::getPositionProgram);
+            
             Tessellator t = Tessellator.getInstance();
             BufferBuilder b = t.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
             
             for (Entity e : c.world.getEntities()) {
                 if (e == c.player || !e.isAlive()) continue;
                 Vec3d pos = positions.getOrDefault(e.getId(), e.getPos()).subtract(ctx.camera().getPos());
                 
-                b.vertex(pos.x, pos.y, pos.z).color(1, 0, 0, 1);
-                b.vertex(pos.x, pos.y + 2, pos.z).color(1, 0, 0, 1);
+                // Явно приводим double к float для совместимости
+                b.vertex((float)pos.x, (float)pos.y, (float)pos.z).color(1.0f, 0.0f, 0.0f, 1.0f);
+                b.vertex((float)pos.x, (float)pos.y + 2.0f, (float)pos.z).color(1.0f, 0.0f, 0.0f, 1.0f);
             }
-            try { 
-                BufferRenderer.drawWithGlobalProgram(b.end()); 
-            } catch (Exception ignored) {}
+            BufferRenderer.drawWithGlobalProgram(b.end());
             RenderSystem.enableDepthTest();
         });
     }
@@ -45,14 +46,14 @@ public class MKESP implements ClientModInitializer {
 class MKNetworkMixin {
     @Inject(method = "onEntityPosition", at = @At("HEAD"))
     void onPos(EntityPositionS2CPacket p, CallbackInfo ci) {
-        // В 1.21.4 поля в пакетах MojMap обычно публичные и называются без скобок
-        MKESP.positions.put(p.entityId, new Vec3d(p.x, p.y, p.z));
+        // Используем геттеры, так как поля защищены (private access)
+        MKESP.positions.put(p.getId(), new Vec3d(p.getX(), p.getY(), p.getZ()));
     }
     
     @Inject(method = "onEntitiesDestroy", at = @At("HEAD"))
     void onDest(EntitiesDestroyS2CPacket p, CallbackInfo ci) {
-        // Поле entityIds — это массив int, к которому обращаемся напрямую
-        for(int i : p.entityIds) {
+        // Используем правильный метод доступа к массиву
+        for(int i : p.getEntityIds()) {
             MKESP.positions.remove(i);
         }
     }
