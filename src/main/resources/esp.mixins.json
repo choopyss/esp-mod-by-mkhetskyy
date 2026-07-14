@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.mk.esp",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["MKNetworkMixin"],
+  "injectors": { "defaultRequire": 1 }
+}
