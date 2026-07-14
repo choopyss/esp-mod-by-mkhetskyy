@@ -45,15 +45,14 @@ public class MKESP implements ClientModInitializer {
 class MKNetworkMixin {
     @Inject(method = "onEntityPosition", at = @At("HEAD"))
     void onPos(EntityPositionS2CPacket p, CallbackInfo ci) {
-        // Доступ через поля, которые присутствуют в структуре пакета
-        MKESP.positions.put(p.entityId(), new Vec3d(p.x(), p.y(), p.z()));
+        // В 1.21.4 поля в пакетах MojMap обычно публичные и называются без скобок
+        MKESP.positions.put(p.entityId, new Vec3d(p.x, p.y, p.z));
     }
     
     @Inject(method = "onEntitiesDestroy", at = @At("HEAD"))
     void onDest(EntitiesDestroyS2CPacket p, CallbackInfo ci) {
-        // Метод entityIds() в некоторых сборках может быть полем, 
-        // но чаще всего это метод доступа к массиву.
-        for(int i : p.entityIds()) {
+        // Поле entityIds — это массив int, к которому обращаемся напрямую
+        for(int i : p.entityIds) {
             MKESP.positions.remove(i);
         }
     }
