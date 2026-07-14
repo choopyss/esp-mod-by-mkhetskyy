@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "mk-esp",
+  "version": "${version}",
+  "name": "MKESP",
+  "entrypoints": { "client": ["com.mk.esp.MKESP"] },
+  "mixins": ["esp.mixins.json"],
+  "depends": { "fabricloader": ">=0.16.10", "minecraft": "1.21.4" }
+}
