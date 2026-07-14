@@ -5,7 +5,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.util.math.Vec3d;
@@ -46,12 +45,14 @@ public class MKESP implements ClientModInitializer {
 class MKNetworkMixin {
     @Inject(method = "onEntityPosition", at = @At("HEAD"))
     void onPos(EntityPositionS2CPacket p, CallbackInfo ci) {
-        MKESP.positions.put(p.getEntityId(), new Vec3d(p.getX(), p.getY(), p.getZ()));
+        // В 1.21.4 для доступа к полям пакета часто используются публичные поля x, y, z
+        MKESP.positions.put(p.id(), new Vec3d(p.x(), p.y(), p.z()));
     }
     
     @Inject(method = "onEntitiesDestroy", at = @At("HEAD"))
     void onDest(EntitiesDestroyS2CPacket p, CallbackInfo ci) {
-        for(int i : p.getEntityIds()) {
+        // У пакета уничтожения метод называется entityIds()
+        for(int i : p.entityIds()) {
             MKESP.positions.remove(i);
         }
     }
